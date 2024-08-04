@@ -280,7 +280,6 @@ private:
       if (!buffer[cursorY + startLine].empty() &&
           cursorX < buffer[cursorY + startLine].length() - 1) {
         buffer[cursorY + startLine].erase(cursorX + 1, 1);
-        ++cursorX;
       } else if (cursorY + startLine < buffer.size() - 1) {
         buffer[cursorY + startLine] += buffer[cursorY + startLine + 1];
         buffer.erase(buffer.begin() + cursorY + startLine + 1);
@@ -341,13 +340,15 @@ private:
     case KEY_END:
       cursorX = buffer[cursorY + startLine].length() - 1;
       break;
+    
+    case KEY_RESIZE:
+      break;
 
     case KEY_BTAB:
     case KEY_CTAB:
     case KEY_STAB:
     case KEY_CATAB:
     case '\t':
-    case KEY_RESIZE:
       modified = true;
       buffer[cursorY + startLine].insert(cursorX, 4, ' ');
       cursorX += 4;
