@@ -10,6 +10,7 @@
 #define KEY_ESC 27
 #define REG_COLOR_NUM 1
 #define CUS_COLOR_NUM 1
+#define TAB_SIZE 4
 
 enum EditorMode { NORMAL, INSERT, COMMAND };
 enum WrapMode { BREAK, SCROLL };
@@ -148,7 +149,11 @@ private:
   void handleNormalEditorMode(int ch) {
     switch (ch) {
     case 'i':
-      editorMode = INSERT;
+      if (readOnly) {
+        warnMessage = "Readonly file cannot be edited.";
+      } else {
+        editorMode = INSERT;
+      }
       break;
 
     case ':':
@@ -159,16 +164,18 @@ private:
     case KEY_UP:
       if (cursorY + startLine > 0) {
         --cursorY;
-        cursorX =
-            std::min(cursorX, std::max(0, int(buffer[cursorY + startLine].length() - 1)));
+        cursorX = std::min(
+            cursorX,
+            std::max(0, int(buffer[cursorY + startLine].length() - 1)));
       }
       break;
 
     case KEY_DOWN:
       if (cursorY + startLine < buffer.size() - 1) {
         ++cursorY;
-        cursorX =
-            std::min(cursorX, std::max(0, int(buffer[cursorY + startLine].length() - 1)));
+        cursorX = std::min(
+            cursorX,
+            std::max(0, int(buffer[cursorY + startLine].length() - 1)));
       }
       break;
 
@@ -245,6 +252,10 @@ private:
   }
 
   void handleInsertEditorMode(int ch) {
+    if (readOnly) {
+      warnMessage = "Readonly file cannot be edited.";
+      return;
+    }
     switch (ch) {
     case KEY_ESC:
       editorMode = NORMAL;
@@ -337,6 +348,9 @@ private:
     case KEY_CATAB:
     case '\t':
     case KEY_RESIZE:
+      modified = true;
+      buffer[cursorY + startLine].insert(cursorX, 4, ' ');
+      cursorX += 4;
       break;
 
     default:
@@ -432,9 +446,10 @@ private:
     if (warnMessage.length()) {
       mvwprintw(infoWindow, 0, 0, "[WARN]%s\n", warnMessage.c_str());
     } else {
-      mvwprintw(infoWindow, 0, 0, "\"%s\" %s\tLine %d\tCol %d\n",
+      mvwprintw(infoWindow, 0, 0, "\"%s\" %s%s\tLine %d\tCol %d\n",
                 filename.c_str(), isNewFile ? "(new file)" : "",
-                cursorY + startLine + 1, cursorX + 1);
+                readOnly ? "(read only)" : "", cursorY + startLine + 1,
+                cursorX + 1);
     }
     wrefresh(infoWindow);
 
